@@ -6,8 +6,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/olt-sentinel-backend
-  IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/olt-sentinel-frontend
+  IMAGE_BACKEND: ghcr.io/lukasmanakel/olt-sentinel-backend:latest
+  IMAGE_FRONTEND: ghcr.io/lukasmanakel/olt-sentinel-frontend:latest
 
 jobs:
   build:
