@@ -1,0 +1,12 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f1117; color: #e0e0e0; font-family: 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1a1d27; }
+::-webkit-scrollbar-thumb { background: #3a3f5c; border-radius: 3px; }
+.badge-critico { background: #ff2d2d22; color: #ff4d4d; border: 1px solid #ff4d4d44; }
+.badge-alto    { background: #ff8c0022; color: #ff9d1a; border: 1px solid #ff9d1a44; }
+.badge-medio   { background: #ffd70022; color: #ffd700; border: 1px solid #ffd70044; }
+.badge-none    { background: #4caf5022; color: #66bb6a; border: 1px solid #66bb6a44; }
+.badge-critico_baixo { background: #ff2d2d22; color: #ff4d4d; border: 1px solid #ff4d4d44; }
+.badge-critico_alto  { background: #ff8c0022; color: #ff9d1a; border: 1px solid #ff9d1a44; }
+.badge-normal        { background: #4caf5022; color: #66bb6a; border: 1px solid #66bb6a44; }
