@@ -17,7 +17,7 @@ services:
         condition: on-failure
 
   backend:
-    image: ghcr.io/SEU_USUARIO/olt-sentinel-backend:latest
+    image: ghcr.io/lukasmanakel/olt-sentinel-backend:latest
     environment:
       DATABASE_URL: "postgresql://postgres:{{POSTGRES_PASSWORD}}@postgres:5432/olt_sentinel"
       ZABBIX_URL: "{{ZABBIX_URL}}"
@@ -37,7 +37,7 @@ services:
         condition: on-failure
 
   frontend:
-    image: ghcr.io/SEU_USUARIO/olt-sentinel-frontend:latest
+    image: ghcr.io/lukasmanakel/olt-sentinel-frontend:latest
     ports:
       - "3000:80"
     networks:
