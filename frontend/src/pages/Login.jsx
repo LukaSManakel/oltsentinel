@@ -1,23 +1,20 @@
+
+Se sim, o arquivo que você salvou antes ainda tem o bug. Apaga tudo e cola esse conteúdo simplificado que não tem risco de corte:
+
+```jsx
 import { useState } from 'react'
-
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
-
   async function handleSubmit(e) {
     e.preventDefault()
     setErro('')
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      })
+      const res = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, senha }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao fazer login')
       onLogin(data.user, data.token)
@@ -27,7 +24,8 @@ export default function Login({ onLogin }) {
       setLoading(false)
     }
   }
-
+  const inp = { width: '100%', padding: '10px 14px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 8, color: '#fff', fontSize: 14, boxSizing: 'border-box', outline: 'none' }
+  const lbl = { fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }
   return (
     <div style={{ minHeight: '100vh', background: '#0f1117', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ width: 380, background: '#1a1d2e', borderRadius: 16, padding: 40, boxShadow: '0 20px 60px #0008' }}>
@@ -38,37 +36,15 @@ export default function Login({ onLogin }) {
         </div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            abel style={{ fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="seu@email.com"
-              style={{ width: '100%', padding: '10px 14px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 8, color: '#fff', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
-            />
+            abel style={lbl}>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" style={inp} />
           </div>
           <div style={{ marginBottom: 24 }}>
-            abel style={{ fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }}>Senha</label>
-            <input
-              type="password"
-              value={senha}
-              onChange={e => setSenha(e.target.value)}
-              required
-              placeholder="••••••••"
-              style={{ width: '100%', padding: '10px 14px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 8, color: '#fff', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
-            />
+            abel style={lbl}>Senha</label>
+            <input type="password" value={senha} onChange={e => setSenha(e.target.value)} required placeholder="- - - - - - - - " style={inp} />
           </div>
-          {erro && (
-            <div style={{ background: '#ff444420', border: '1px solid #ff4444', borderRadius: 8, padding: '10px 14px', color: '#ff6666', fontSize: 13, marginBottom: 16 }}>
-              {erro}
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '12px', background: loading ? '#4f46e5aa' : '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
-          >
+          {erro && <div style={{ background: '#ff444420', border: '1px solid #ff4444', borderRadius: 8, padding: '10px 14px', color: '#ff6666', fontSize: 13, marginBottom: 16 }}>{erro}</div>}
+          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: loading ? '#4f46e5aa' : '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
@@ -76,3 +52,6 @@ export default function Login({ onLogin }) {
     </div>
   )
 }
+```
+
+Commit e me diz! 👍
