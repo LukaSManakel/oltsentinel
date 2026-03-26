@@ -32,11 +32,11 @@ export default function Login({ onLogin }) {
         </div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            abel style={lbl}>Email</label>
+            <span style={lbl}>Email</span>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" style={inp} />
           </div>
           <div style={{ marginBottom: 24 }}>
-            abel style={lbl}>Senha</label>
+            <span style={lbl}>Senha</span>
             <input type="password" value={senha} onChange={e => setSenha(e.target.value)} required placeholder="••••••••" style={inp} />
           </div>
           {erro && <div style={{ background: '#ff444420', border: '1px solid #ff4444', borderRadius: 8, padding: '10px 14px', color: '#ff6666', fontSize: 13, marginBottom: 16 }}>{erro}</div>}
