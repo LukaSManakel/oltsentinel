@@ -1,6 +1,3 @@
-
-Se sim, o arquivo que você salvou antes ainda tem o bug. Apaga tudo e cola esse conteúdo simplificado que não tem risco de corte:
-
 ```jsx
 import { useState } from 'react'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -52,6 +49,3 @@ export default function Login({ onLogin }) {
     </div>
   )
 }
-```
-
-Commit e me diz! 👍
