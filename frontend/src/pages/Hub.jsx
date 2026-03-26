@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react'
-
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
 function authHeaders() {
   const token = localStorage.getItem('olt_token')
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 }
-
-const labelStyle = { fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }
-const inputStyle = { width: '100%', padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13, boxSizing: 'border-box' }
-
+const lStyle = { fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }
+const iStyle = { width: '100%', padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13, boxSizing: 'border-box' }
 function Card({ cor, icon, label, valor, small }) {
   return (
     <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, borderLeft: `4px solid ${cor}` }}>
@@ -18,7 +14,6 @@ function Card({ cor, icon, label, valor, small }) {
     </div>
   )
 }
-
 function DashboardDia({ user }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -73,7 +68,6 @@ function DashboardDia({ user }) {
     </div>
   )
 }
-
 function Calendario({ user }) {
   const [events, setEvents] = useState([])
   const [form, setForm] = useState({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
@@ -105,12 +99,12 @@ function Calendario({ user }) {
       {mostrarForm && (
         <form onSubmit={criarEvento} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: '1/-1' }}>abel style={labelStyle}>Título</label><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required style={inputStyle} /></div>
-            <div>abel style={labelStyle}>Tipo</label><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} style={inputStyle}><option value="reuniao">Reunião</option><option value="treinamento">Treinamento</option><option value="visita">Visita Técnica</option></select></div>
-            <div>abel style={labelStyle}>Participantes (vírgula)</label><input value={form.participantes} onChange={e => setForm({ ...form, participantes: e.target.value })} style={inputStyle} placeholder="Daniel, Lucas..." /></div>
-            <div>abel style={labelStyle}>Início</label><input type="datetime-local" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} required style={inputStyle} /></div>
-            <div>abel style={labelStyle}>Fim</label><input type="datetime-local" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} style={inputStyle} /></div>
-            <div style={{ gridColumn: '1/-1' }}>abel style={labelStyle}>Descrição</label><textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...inputStyle, height: 80, resize: 'vertical' }} /></div>
+            <div style={{ gridColumn: '1/-1' }}><span style={lStyle}>Título</span><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required style={iStyle} /></div>
+            <div><span style={lStyle}>Tipo</span><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} style={iStyle}><option value="reuniao">Reunião</option><option value="treinamento">Treinamento</option><option value="visita">Visita Técnica</option></select></div>
+            <div><span style={lStyle}>Participantes (vírgula)</span><input value={form.participantes} onChange={e => setForm({ ...form, participantes: e.target.value })} style={iStyle} placeholder="Daniel, Lucas..." /></div>
+            <div><span style={lStyle}>Início</span><input type="datetime-local" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} required style={iStyle} /></div>
+            <div><span style={lStyle}>Fim</span><input type="datetime-local" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} style={iStyle} /></div>
+            <div style={{ gridColumn: '1/-1' }}><span style={lStyle}>Descrição</span><textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...iStyle, height: 80, resize: 'vertical' }} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button type="submit" style={{ padding: '8px 20px', background: '#6366f1', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer' }}>Salvar</button>
@@ -160,7 +154,6 @@ function Calendario({ user }) {
     </div>
   )
 }
-
 function Ranking() {
   const [items, setItems] = useState([])
   useEffect(() => {
@@ -185,7 +178,6 @@ function Ranking() {
     </div>
   )
 }
-
 function Usuarios() {
   const [users, setUsers] = useState([])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', role: 'suporte' })
@@ -219,11 +211,11 @@ function Usuarios() {
       {mostrarForm && (
         <form onSubmit={criarUsuario} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>abel style={labelStyle}>Nome</label><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required style={inputStyle} /></div>
-            <div>abel style={labelStyle}>Email</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required style={inputStyle} /></div>
-            <div>abel style={labelStyle}>Senha</label><input type="password" value={form.senha} onChange={e => setForm({ ...form, senha: e.target.value })} required style={inputStyle} /></div>
-            <div>abel style={labelStyle}>Perfil</label>
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={inputStyle}>
+            <div><span style={lStyle}>Nome</span><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required style={iStyle} /></div>
+            <div><span style={lStyle}>Email</span><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required style={iStyle} /></div>
+            <div><span style={lStyle}>Senha</span><input type="password" value={form.senha} onChange={e => setForm({ ...form, senha: e.target.value })} required style={iStyle} /></div>
+            <div><span style={lStyle}>Perfil</span>
+              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={iStyle}>
                 <option value="suporte">Suporte</option>
                 <option value="admin">Admin</option>
               </select>
@@ -252,7 +244,6 @@ function Usuarios() {
     </div>
   )
 }
-
 function Logs() {
   const [logs, setLogs] = useState([])
   useEffect(() => {
