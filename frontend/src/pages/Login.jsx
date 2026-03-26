@@ -1,4 +1,3 @@
-```jsx
 import { useState } from 'react'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 export default function Login({ onLogin }) {
@@ -38,7 +37,7 @@ export default function Login({ onLogin }) {
           </div>
           <div style={{ marginBottom: 24 }}>
             abel style={lbl}>Senha</label>
-            <input type="password" value={senha} onChange={e => setSenha(e.target.value)} required placeholder="- - - - - - - - " style={inp} />
+            <input type="password" value={senha} onChange={e => setSenha(e.target.value)} required placeholder="••••••••" style={inp} />
           </div>
           {erro && <div style={{ background: '#ff444420', border: '1px solid #ff4444', borderRadius: 8, padding: '10px 14px', color: '#ff6666', fontSize: 13, marginBottom: 16 }}>{erro}</div>}
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: loading ? '#4f46e5aa' : '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}>
