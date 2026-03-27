@@ -18,13 +18,17 @@ function DashboardDia({ user }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [novaTask, setNovaTask] = useState('')
+  const [erro, setErro] = useState('')
   useEffect(() => { carregar() }, [])
   async function carregar() {
     setLoading(true)
+    setErro('')
     try {
       const res = await fetch(`${API}/api/hub/dashboard`, { headers: authHeaders() })
-      setData(await res.json())
-    } finally { setLoading(false) }
+      const json = await res.json()
+      if (!res.ok || json.error) { setErro(json.error || 'Erro ao carregar'); return }
+      setData(json)
+    } catch (e) { setErro('Erro de conexão') } finally { setLoading(false) }
   }
   async function concluir(id) {
     await fetch(`${API}/api/hub/tasks/${id}/concluir`, { method: 'POST', headers: authHeaders() })
@@ -38,6 +42,7 @@ function DashboardDia({ user }) {
     carregar()
   }
   if (loading) return <div style={{ color: '#666', padding: 40 }}>Carregando...</div>
+  if (erro) return <div style={{ color: '#ff4444', padding: 40 }}>Erro: {erro}</div>
   if (!data) return null
   return (
     <div>
@@ -49,7 +54,8 @@ function DashboardDia({ user }) {
       </div>
       <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: '0 0 16px', fontSize: 15, color: '#fff' }}>📌 Tarefas do Dia</h3>
-        {data.tasks?.map(task => (
+        {(!data.tasks || data.tasks.length === 0) && <div style={{ color: '#666', padding: 20, textAlign: 'center' }}>Nenhuma tarefa para hoje</div>}
+        {(data.tasks || []).map(task => (
           <div key={task.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0f1117', borderRadius: 8, marginBottom: 8, borderLeft: `3px solid ${task.status === 'concluido' ? '#10b981' : '#f59e0b'}` }}>
             <div>
               <div style={{ fontSize: 14, color: task.status === 'concluido' ? '#666' : '#fff', textDecoration: task.status === 'concluido' ? 'line-through' : 'none' }}>{task.titulo}</div>
@@ -72,17 +78,26 @@ function Calendario({ user }) {
   const [events, setEvents] = useState([])
   const [form, setForm] = useState({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [erro, setErro] = useState('')
   useEffect(() => { carregar() }, [])
   async function carregar() {
-    const res = await fetch(`${API}/api/hub/events`, { headers: authHeaders() })
-    setEvents(await res.json())
+    try {
+      const res = await fetch(`${API}/api/hub/events`, { headers: authHeaders() })
+      const json = await res.json()
+      setEvents(Array.isArray(json) ? json : [])
+    } catch (e) { setEvents([]) }
   }
   async function criarEvento(e) {
     e.preventDefault()
-    await fetch(`${API}/api/hub/events`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, participantes: form.participantes.split(',').map(p => p.trim()).filter(Boolean) }) })
-    setForm({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
-    setMostrarForm(false)
-    carregar()
+    setErro('')
+    try {
+      const res = await fetch(`${API}/api/hub/events`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, participantes: form.participantes.split(',').map(p => p.trim()).filter(Boolean) }) })
+      const json = await res.json()
+      if (!res.ok) { setErro(json.error || 'Erro ao criar'); return }
+      setForm({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
+      setMostrarForm(false)
+      carregar()
+    } catch (e) { setErro('Erro de conexão') }
   }
   async function deletar(id) {
     await fetch(`${API}/api/hub/events/${id}`, { method: 'DELETE', headers: authHeaders() })
@@ -96,6 +111,7 @@ function Calendario({ user }) {
         <h3 style={{ margin: 0, color: '#fff' }}>🗓️ Eventos</h3>
         {user.role === 'admin' && <button onClick={() => setMostrarForm(!mostrarForm)} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Novo Evento</button>}
       </div>
+      {erro && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 12 }}>{erro}</div>}
       {mostrarForm && (
         <form onSubmit={criarEvento} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -121,7 +137,7 @@ function Calendario({ user }) {
                 <div style={{ fontWeight: 600, color: '#fff', fontSize: 15 }}>{ev.titulo}</div>
                 <div style={{ fontSize: 12, color: tipoColors[ev.tipo], marginTop: 2 }}>{tipoLabels[ev.tipo]}</div>
                 <div style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>📅 {new Date(ev.data_inicio).toLocaleString('pt-BR')}{ev.data_fim ? ` → ${new Date(ev.data_fim).toLocaleString('pt-BR')}` : ''}</div>
-                {ev.participantes?.length > 0 && <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>👥 {ev.participantes.join(', ')}</div>}
+                {ev.participantes?.length > 0 && <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>👥 {Array.isArray(ev.participantes) ? ev.participantes.join(', ') : ev.participantes}</div>}
                 {ev.descricao && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{ev.descricao}</div>}
               </div>
               {user.role === 'admin' && <button onClick={() => deletar(ev.id)} style={{ background: '#ff444420', border: '1px solid #ff4444', borderRadius: 6, color: '#ff4444', padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>Excluir</button>}
@@ -131,175 +147,18 @@ function Calendario({ user }) {
       </div>
     </div>
   )
-}function Historico() {
+}
+function Historico() {
   const [items, setItems] = useState([])
   useEffect(() => {
-    fetch(`${API}/api/hub/historico`, { headers: authHeaders() }).then(r => r.json()).then(setItems)
+    fetch(`${API}/api/hub/historico`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => setItems(Array.isArray(d) ? d : []))
+      .catch(() => setItems([]))
   }, [])
   return (
     <div>
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📋 Histórico de Tarefas Concluídas</h3>
       <div style={{ display: 'grid', gap: 8 }}>
         {items.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhuma tarefa concluída ainda</div>}
-        {items.map(t => (
-          <div key={t.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ color: '#fff', fontSize: 14 }}>{t.titulo}</div>
-              <div style={{ color: '#10b981', fontSize: 12, marginTop: 2 }}>✅ {t.concluido_por_nome} — {new Date(t.concluido_em).toLocaleString('pt-BR')}</div>
-            </div>
-            <div style={{ fontSize: 11, color: '#666' }}>{new Date(t.data).toLocaleDateString('pt-BR')}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-function Ranking() {
-  const [items, setItems] = useState([])
-  useEffect(() => {
-    fetch(`${API}/api/hub/ranking`, { headers: authHeaders() }).then(r => r.json()).then(setItems)
-  }, [])
-  const medalhas = ['🥇', '🥈', '🥉']
-  return (
-    <div>
-      <h3 style={{ color: '#fff', marginBottom: 16 }}>🏆 Ranking de Produtividade</h3>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {items.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhuma tarefa concluída ainda</div>}
-        {items.map((u, i) => (
-          <div key={u.nome} style={{ background: '#1a1d2e', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: `4px solid ${i === 0 ? '#f59e0b' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : '#2a2d3e'}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 20 }}>{medalhas[i] || `${i + 1}º`}</span>
-              <span style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>{u.nome}</span>
-            </div>
-            <span style={{ color: '#10b981', fontWeight: 700, fontSize: 18 }}>{u.concluidas}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-function Usuarios() {
-  const [users, setUsers] = useState([])
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', role: 'suporte' })
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [erro, setErro] = useState('')
-  useEffect(() => { carregar() }, [])
-  async function carregar() {
-    const res = await fetch(`${API}/api/hub/users`, { headers: authHeaders() })
-    setUsers(await res.json())
-  }
-  async function criarUsuario(e) {
-    e.preventDefault()
-    setErro('')
-    const res = await fetch(`${API}/api/hub/users`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(form) })
-    const data = await res.json()
-    if (!res.ok) { setErro(data.error); return }
-    setForm({ nome: '', email: '', senha: '', role: 'suporte' })
-    setMostrarForm(false)
-    carregar()
-  }
-  async function toggleUser(id) {
-    await fetch(`${API}/api/hub/users/${id}/toggle`, { method: 'PATCH', headers: authHeaders() })
-    carregar()
-  }
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h3 style={{ margin: 0, color: '#fff' }}>👥 Usuários</h3>
-        <button onClick={() => setMostrarForm(!mostrarForm)} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Novo Usuário</button>
-      </div>
-      {mostrarForm && (
-        <form onSubmit={criarUsuario} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div><span style={lStyle}>Nome</span><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Email</span><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Senha</span><input type="password" value={form.senha} onChange={e => setForm({ ...form, senha: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Perfil</span>
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={iStyle}>
-                <option value="suporte">Suporte</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          {erro && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 8 }}>{erro}</div>}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button type="submit" style={{ padding: '8px 20px', background: '#6366f1', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer' }}>Salvar</button>
-            <button type="button" onClick={() => setMostrarForm(false)} style={{ padding: '8px 20px', background: '#374151', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer' }}>Cancelar</button>
-          </div>
-        </form>
-      )}
-      <div style={{ display: 'grid', gap: 8 }}>
-        {users.map(u => (
-          <div key={u.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{u.nome}</div>
-              <div style={{ color: '#666', fontSize: 12 }}>{u.email} · <span style={{ color: u.role === 'admin' ? '#6366f1' : '#aaa' }}>{u.role}</span></div>
-            </div>
-            <button onClick={() => toggleUser(u.id)} style={{ padding: '6px 14px', background: u.ativo ? '#ff444420' : '#10b98120', border: `1px solid ${u.ativo ? '#ff4444' : '#10b981'}`, borderRadius: 6, color: u.ativo ? '#ff4444' : '#10b981', cursor: 'pointer', fontSize: 12 }}>
-              {u.ativo ? 'Desativar' : 'Ativar'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-function Logs() {
-  const [logs, setLogs] = useState([])
-  useEffect(() => {
-    fetch(`${API}/api/hub/logs`, { headers: authHeaders() }).then(r => r.json()).then(setLogs)
-  }, [])
-  return (
-    <div>
-      <h3 style={{ color: '#fff', marginBottom: 16 }}>📝 Log de Atividades</h3>
-      <div style={{ display: 'grid', gap: 6 }}>
-        {logs.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhuma atividade registrada</div>}
-        {logs.map(l => (
-          <div key={l.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span style={{ color: '#6366f1', fontSize: 13, fontWeight: 600 }}>{l.nome}</span>
-              <span style={{ color: '#aaa', fontSize: 13 }}> → {l.acao}</span>
-              {l.detalhes && <span style={{ color: '#666', fontSize: 12 }}> ({l.detalhes})</span>}
-            </div>
-            <div style={{ fontSize: 11, color: '#666' }}>{new Date(l.created_at).toLocaleString('pt-BR')}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}export default function Hub({ user }) {
-  const [aba, setAba] = useState('dashboard')
-  const abas = [
-    { id: 'dashboard', label: '📅 Dia a Dia' },
-    { id: 'calendario', label: '🗓️ Calendário' },
-    { id: 'historico', label: '📋 Histórico' },
-    { id: 'ranking', label: '🏆 Ranking' },
-    ...(user.role === 'admin' ? [
-      { id: 'usuarios', label: '👥 Usuários' },
-      { id: 'logs', label: '📝 Logs' }
-    ] : [])
-  ]
-  return (
-    <div style={{ padding: 24, fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>🏢 Hub Operacional</h1>
-        <p style={{ color: '#666', margin: '4px 0 0', fontSize: 13 }}>Centro de gestão da rotina técnica</p>
-      </div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #2a2d3e' }}>
-        {abas.map(a => (
-          <button key={a.id} onClick={() => setAba(a.id)} style={{
-            padding: '8px 16px', background: 'transparent', border: 'none',
-            borderBottom: aba === a.id ? '2px solid #6366f1' : '2px solid transparent',
-            color: aba === a.id ? '#6366f1' : '#aaa', cursor: 'pointer', fontSize: 13, fontWeight: 500
-          }}>{a.label}</button>
-        ))}
-      </div>
-      {aba === 'dashboard' && <DashboardDia user={user} />}
-      {aba === 'calendario' && <Calendario user={user} />}
-      {aba === 'historico' && <Historico />}
-      {aba === 'ranking' && <Ranking />}
-      {aba === 'usuarios' && user.role === 'admin' && <Usuarios />}
-      {aba === 'logs' && user.role === 'admin' && <Logs />}
-    </div>
-  )
-}
+        {items.map(
