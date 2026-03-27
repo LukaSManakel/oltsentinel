@@ -73,8 +73,7 @@ function DashboardDia({ user }) {
       </div>
     </div>
   )
-}
-function Calendario({ user }) {
+}function Calendario({ user }) {
   const [events, setEvents] = useState([])
   const [form, setForm] = useState({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -147,8 +146,7 @@ function Calendario({ user }) {
       </div>
     </div>
   )
-}
-function Historico() {
+}function Historico() {
   const [items, setItems] = useState([])
   useEffect(() => {
     fetch(`${API}/api/hub/historico`, { headers: authHeaders() })
@@ -161,4 +159,5 @@ function Historico() {
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📋 Histórico de Tarefas Concluídas</h3>
       <div style={{ display: 'grid', gap: 8 }}>
         {items.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhuma tarefa concluída ainda</div>}
-        {items.map(
+        {items.map(t => (
+          <div key={t.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '
