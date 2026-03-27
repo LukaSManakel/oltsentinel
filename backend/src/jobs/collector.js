@@ -1,9 +1,7 @@
-const { Pool } = require('pg');
+const { pool } = require('../db/schema');
 const { zabbixCall } = require('../services/zabbixService');
 const { getSeverityByOfflineHours, getPowerStatus } = require('../services/incidentService');
 require('dotenv').config();
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const ONU_OFFLINE_RE = /^Onu Offline\s*-\s*(.+?)\s+Porta\s+PON-/i;
 const ONU_POWER_RE = /^Pot[eê]ncia\s+dBm.+?na\s+ONU\s*-\s*(.+?)\s+Porta\s+PON-.+?-\s*(-?\d+\.?\d*)\s*$/i;
@@ -100,9 +98,7 @@ async function collectData() {
       await client.query(
         `INSERT INTO onus (name, olt_name, status, offline_since, offline_hours, power_dbm, power_status, severity, last_seen, updated_at)
          VALUES ($1,$2,'offline',$3,$4,$5,$6,$7,NOW(),NOW())
-         ON CONFLICT (name) DO UPDATE SET
-           olt_name=$2, status='offline', offline_since=$3, offline_hours=$4,
-           power_dbm=$5, power_status=$6, severity=$7, last_seen=NOW(), updated_at=NOW()`,
+         ON CONFLICT (name) DO UPDATE SET olt_name=$2, status='offline', offline_since=$3, offline_hours=$4, power_dbm=$5, power_status=$6, severity=$7, last_seen=NOW(), updated_at=NOW()`,
         [onuName, oltName, offlineSince, offlineHours, powerDbm, powerStatus, severity]
       );
 
@@ -115,18 +111,8 @@ async function collectData() {
           await client.query(
             `INSERT INTO incidents (onu_name, olt_name, type, severity, offline_hours, power_dbm, description, resolved)
              VALUES ($1,$2,'offline',$3,$4,$5,$6,FALSE)`,
-            [onuName, oltName, severity, offlineHours, powerDbm,
-             `ONU offline há ${Math.floor(offlineHours/24)}d ${Math.floor(offlineHours%24)}h`]
+            [onuName, oltName, severity, offlineHours, powerDbm, `ONU offline há ${Math.floor(offlineHours/24)}d ${Math.floor(offlineHours%24)}h`]
           );
-          if (process.env.WEBHOOK_URL) {
-            try {
-              const axios = require('axios');
-              await axios.post(process.env.WEBHOOK_URL, {
-                message: `🚨 ONU ${onuName} offline há ${Math.floor(offlineHours/24)} dias na ${oltName}`,
-                onu: onuName, olt: oltName, hours: offlineHours, severity
-              });
-            } catch (we) { console.warn('[Webhook]', we.message); }
-          }
         }
       }
     }
@@ -139,9 +125,7 @@ async function collectData() {
     }
 
     await client.query(
-      `UPDATE incidents SET resolved=TRUE, resolved_at=NOW()
-       WHERE resolved=FALSE AND type='offline'
-       AND onu_name NOT IN (SELECT name FROM onus WHERE status='offline')`
+      `UPDATE incidents SET resolved=TRUE, resolved_at=NOW() WHERE resolved=FALSE AND type='offline' AND onu_name NOT IN (SELECT name FROM onus WHERE status='offline')`
     );
 
     const stats = await client.query(`SELECT status, COUNT(*) FROM onus GROUP BY status`);
