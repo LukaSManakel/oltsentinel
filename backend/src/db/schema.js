@@ -71,7 +71,7 @@ async function initDB() {
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         senha_hash VARCHAR(255) NOT NULL,
-              ativo BOOLEAN DEFAULT TRUE,
+        ativo BOOLEAN DEFAULT TRUE,
         role VARCHAR(50) DEFAULT 'suporte',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -87,37 +87,39 @@ async function initDB() {
         data DATE DEFAULT CURRENT_DATE,
         concluido_por INTEGER REFERENCES users(id),
         concluido_em TIMESTAMPTZ,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-              CONSTRAINT tasks_unique UNIQUE (titulo, data)
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT tasks_unique UNIQUE (titulo, data)
       );
     `);
-,
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
-      titulo VARCHAR(255) NOT NULL,
-      descricao TEXT,
-      tipo VARCHAR(50) DEFAULT 'reuniao',
-      data_inicio TIMESTAMPTZ,
-      data_fim TIMESTAMPTZ,
-      participantes JSONB,
-      criado_por INTEGER REFERENCES users(id),
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS activity_logs (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        acao TEXT,
-              detalhes TEXT
+        titulo VARCHAR(255) NOT NULL,
+        descricao TEXT,
+        tipo VARCHAR(50) DEFAULT 'reuniao',
+        data_inicio TIMESTAMPTZ,
+        data_fim TIMESTAMPTZ,
+        participantes JSONB,
+        criado_por INTEGER REFERENCES users(id),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
 
-    const adminCheck = await client.q NOW()
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS activity_log (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        acao TEXT,
+        detalhes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    const adminCheck = await client.query(
       "SELECT id FROM users WHERE email = 'vallelukas@outlook.com.br'"
     );
+
     if (adminCheck.rows.length === 0) {
       const hash = await bcrypt.hash('Samuraipro1@', 10);
       await client.query(
