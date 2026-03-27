@@ -161,7 +161,7 @@ router.get('/users', adminOnly, async (req, res) => {
 
 // Criar usuário (admin)
 router.post('/users', adminOnly, async (req, res) => {
-  const { nome, email, senha_hash, role } = req.body;
+  const { nome, email, senha, role } = req.body;
   try {
     const hash = await bcrypt.hash(senha, 10);
     const result = await pool.query(
