@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 const API = ''
 
 function authHeaders() {
@@ -57,8 +58,17 @@ function DashboardDia({ user }) {
 
   return (
     <div>
+      {/* Cards de Resumo */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <Card cor="#6366f1" icon="👤" label="Responsável do Dia" valor={data.responsavel} />
+        <Card cor="#10b981" icon="✅" label="Tarefas Concluídas" valor={data.stats?.concluidos || 0} />
+        <Card cor="#f59e0b" icon="⏳" label="Tarefas Pendentes" valor={data.stats?.pendentes || 0} />
+      </div>
+
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📌 Tarefas do Dia</h3>
+      
       {(!data.tasks || data.tasks.length === 0) && <div style={{ color: '#666', textAlign: 'center', padding: 20 }}>Nenhuma tarefa para hoje</div>}
+      
       {(data.tasks || []).map(task => (
         <div key={task.id} style={{ background: '#1a1d2e', borderRadius: 12, padding: 16, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -74,6 +84,7 @@ function DashboardDia({ user }) {
           )}
         </div>
       ))}
+
       {user.role === 'admin' && (
         <form onSubmit={adicionarTask} style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <input value={novaTask} onChange={e => setNovaTask(e.target.value)} placeholder="Adicionar tarefa manual..." style={{ flex: 1, padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13 }} />
@@ -127,9 +138,9 @@ function Calendario({ user }) {
         <h3 style={{ color: '#fff', margin: 0 }}>🗓️ Eventos</h3>
         {user.role === 'admin' && <button onClick={() => setMostrarForm(!mostrarForm)} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Novo Evento</button>}
       </div>
-
+      
       {erro && <div style={{ background: '#ff444420', color: '#ff4444', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>{erro}</div>}
-
+      
       {mostrarForm && (
         <form onSubmit={criarEvento} style={{ background: '#1a1d2e', padding: 20, borderRadius: 12, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -176,7 +187,6 @@ function Historico() {
       .then(d => setItems(Array.isArray(d) ? d : []))
       .catch(() => setItems([]))
   }, [])
-
   return (
     <div>
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📋 Histórico de Tarefas Concluídas</h3>
@@ -201,9 +211,7 @@ function Ranking() {
       .then(d => setItems(Array.isArray(d) ? d : []))
       .catch(() => setItems([]))
   }, [])
-
   const medalhas = ['🥇', '🥈', '🥉']
-
   return (
     <div>
       <h3 style={{ color: '#fff', marginBottom: 16 }}>🏆 Ranking de Produtividade</h3>
@@ -259,18 +267,14 @@ function Usuarios() {
         <h3 style={{ margin: 0, color: '#fff' }}>👥 Usuários</h3>
         <button onClick={() => setMostrarForm(!mostrarForm)} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Novo Usuário</button>
       </div>
+      
       {mostrarForm && (
         <form onSubmit={criarUsuario} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><span style={lStyle}>Nome</span><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required style={iStyle} /></div>
             <div><span style={lStyle}>Email</span><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required style={iStyle} /></div>
             <div><span style={lStyle}>Senha</span><input type="password" value={form.senha} onChange={e => setForm({ ...form, senha: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Perfil</span>
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={iStyle}>
-                <option value="suporte">Suporte</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            <div><span style={lStyle}>Perfil</span><br /><select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={iStyle}><option value="suporte">Suporte</option><option value="admin">Admin</option></select></div>
           </div>
           {erro && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 8 }}>{erro}</div>}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -279,6 +283,7 @@ function Usuarios() {
           </div>
         </form>
       )}
+
       <div style={{ display: 'grid', gap: 8 }}>
         {users.map(u => (
           <div key={u.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -286,9 +291,7 @@ function Usuarios() {
               <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{u.nome}</div>
               <div style={{ color: '#666', fontSize: 12 }}>{u.email} · <span style={{ color: u.role === 'admin' ? '#6366f1' : '#aaa' }}>{u.role}</span></div>
             </div>
-            <button onClick={() => toggleUser(u.id)} style={{ padding: '6px 14px', background: u.ativo ? '#ff444420' : '#10b98120', border: `1px solid ${u.ativo ? '#ff4444' : '#10b981'}`, borderRadius: 6, color: u.ativo ? '#ff4444' : '#10b981', cursor: 'pointer', fontSize: 12 }}>
-              {u.ativo ? 'Desativar' : 'Ativar'}
-            </button>
+            <button onClick={() => toggleUser(u.id)} style={{ padding: '6px 14px', background: u.ativo ? '#ff444420' : '#10b98120', border: `1px solid ${u.ativo ? '#ff4444' : '#10b981'}`, borderRadius: 6, color: u.ativo ? '#ff4444' : '#10b981', cursor: 'pointer', fontSize: 12 }}>{u.ativo ? 'Desativar' : 'Ativar'}</button>
           </div>
         ))}
       </div>
@@ -304,7 +307,6 @@ function Logs() {
       .then(d => setLogs(Array.isArray(d) ? d : []))
       .catch(() => setLogs([]))
   }, [])
-
   return (
     <div>
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📝 Log de Atividades</h3>
@@ -328,14 +330,11 @@ function Logs() {
 export default function Hub() {
   const [user, setUser] = useState(null)
   const [aba, setAba] = useState('dashboard')
-
   useEffect(() => {
     const u = localStorage.getItem('olt_user')
     if (u) setUser(JSON.parse(u))
   }, [])
-
   if (!user) return null
-
   const abas = [
     { id: 'dashboard', label: '📅 Dia a Dia' },
     { id: 'calendario', label: '🗓️ Calendário' },
@@ -346,20 +345,17 @@ export default function Hub() {
       { id: 'logs', label: '📝 Logs' }
     ] : [])
   ]
-
   return (
     <div style={{ padding: 24, fontFamily: 'Inter, sans-serif' }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>🏢 Hub Operacional</h1>
         <p style={{ color: '#666', margin: '4px 0 0', fontSize: 13 }}>Centro de gestão da rotina técnica</p>
       </div>
-
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #2a2d3e' }}>
         {abas.map(a => (
           <button key={a.id} onClick={() => setAba(a.id)} style={{ padding: '8px 16px', background: 'transparent', border: 'none', borderBottom: aba === a.id ? '2px solid #6366f1' : '2px solid transparent', color: aba === a.id ? '#6366f1' : '#aaa', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>{a.label}</button>
         ))}
       </div>
-
       <div style={{ background: '#0f1117', borderRadius: 16, padding: 24, border: '1px solid #2a2d3e' }}>
         {aba === 'dashboard' && <DashboardDia user={user} />}
         {aba === 'calendario' && <Calendario user={user} />}
