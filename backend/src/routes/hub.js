@@ -161,11 +161,11 @@ router.get('/users', adminOnly, async (req, res) => {
 
 // Criar usuário (admin)
 router.post('/users', adminOnly, async (req, res) => {
-  const { nome, email, senha, role } = req.body;
+  const { nome, email, senha_hash, role } = req.body;
   try {
     const hash = await bcrypt.hash(senha, 10);
     const result = await pool.query(
-      `INSERT INTO users (nome, email, senha, role) VALUES ($1,$2,$3,$4) RETURNING id, nome, email, role`,
+      `INSERT INTO users (nome, email, senha_hash, role) VALUES ($1,$2,$3,$4) RETURNING id, nome, email, role`,
       [nome, email.toLowerCase(), hash, role || 'suporte']
     );
     res.json(result.rows[0]);
