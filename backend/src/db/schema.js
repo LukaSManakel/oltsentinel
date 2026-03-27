@@ -13,16 +13,29 @@ async function initDB() {
   const client = await pool.connect();
   try {
     await client.query(`
+      CREATE TABLE IF NOT EXISTS olts (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        host_id VARCHAR(255),
+        ip VARCHAR(100),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT olts_name_unique UNIQUE (name)
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS onus (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        olt VARCHAR(255),
+        olt_name VARCHAR(255),
         status VARCHAR(50) DEFAULT 'unknown',
-        offline_hours INTEGER DEFAULT 0,
+        offline_since TIMESTAMPTZ,
+        offline_hours FLOAT DEFAULT 0,
         power_dbm FLOAT,
+        power_status VARCHAR(50),
         severity VARCHAR(50) DEFAULT 'info',
         last_seen TIMESTAMPTZ DEFAULT NOW(),
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
 
@@ -40,10 +53,14 @@ async function initDB() {
       CREATE TABLE IF NOT EXISTS incidents (
         id SERIAL PRIMARY KEY,
         onu_name VARCHAR(255),
-        olt VARCHAR(255),
-        tipo VARCHAR(100),
-        descricao TEXT,
+        olt_name VARCHAR(255),
+        type VARCHAR(100),
         severity VARCHAR(50),
+        offline_hours FLOAT,
+        power_dbm FLOAT,
+        description TEXT,
+        resolved BOOLEAN DEFAULT FALSE,
+        resolved_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
