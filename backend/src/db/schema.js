@@ -91,7 +91,7 @@ async function initDB() {
               CONSTRAINT tasks_unique UNIQUE (titulo, data)
       );
     `);
-
+,
     await client.query(`
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
@@ -110,12 +110,12 @@ async function initDB() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
         acao TEXT,
-              detalhes TEXT,
-        created_at TIMESTAMPTZ DEFAULTNOW()
+              detalhes TEXT
+        created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
 
-    const adminCheck = await client.query(
+    const adminCheck = await client.q NOW()
       "SELECT id FROM users WHERE email = 'vallelukas@outlook.com.br'"
     );
     if (adminCheck.rows.length === 0) {
