@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 const API = ''
+
 function authHeaders() {
   const token = localStorage.getItem('olt_token')
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 }
+
 const lStyle = { fontSize: 13, color: '#aaa', display: 'block', marginBottom: 6 }
 const iStyle = { width: '100%', padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13, boxSizing: 'border-box' }
+
 function Card({ cor, icon, label, valor, small }) {
   return (
     <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, borderLeft: `4px solid ${cor}` }}>
@@ -14,12 +17,15 @@ function Card({ cor, icon, label, valor, small }) {
     </div>
   )
 }
+
 function DashboardDia({ user }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [novaTask, setNovaTask] = useState('')
   const [erro, setErro] = useState('')
+
   useEffect(() => { carregar() }, [])
+
   async function carregar() {
     setLoading(true)
     setErro('')
@@ -28,12 +34,15 @@ function DashboardDia({ user }) {
       const json = await res.json()
       if (!res.ok || json.error) { setErro(json.error || 'Erro ao carregar'); return }
       setData(json)
-    } catch (e) { setErro('Erro de conexão') } finally { setLoading(false) }
+    } catch (e) { setErro('Erro de conexão') }
+    finally { setLoading(false) }
   }
+
   async function concluir(id) {
     await fetch(`${API}/api/hub/tasks/${id}/concluir`, { method: 'POST', headers: authHeaders() })
     carregar()
   }
+
   async function adicionarTask(e) {
     e.preventDefault()
     if (!novaTask.trim()) return
@@ -41,44 +50,48 @@ function DashboardDia({ user }) {
     setNovaTask('')
     carregar()
   }
-  if (loading) return <div style={{ color: '#666', padding: 40 }}>Carregando...</div>
-  if (erro) return <div style={{ color: '#ff4444', padding: 40 }}>Erro: {erro}</div>
+
+  if (loading) return <div>Carregando...</div>
+  if (erro) return <div>Erro: {erro}</div>
   if (!data) return null
+
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <Card cor="#6366f1" icon="📅" label="Hoje" valor={new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })} small />
-        <Card cor="#10b981" icon="👤" label="Responsável do Dia" valor={data.responsavel} />
-        <Card cor="#f59e0b" icon="⏳" label="Pendentes" valor={data.stats?.pendentes || 0} />
-        <Card cor="#6366f1" icon="✅" label="Concluídas" valor={data.stats?.concluidos || 0} />
-      </div>
-      <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 15, color: '#fff' }}>📌 Tarefas do Dia</h3>
-        {(!data.tasks || data.tasks.length === 0) && <div style={{ color: '#666', padding: 20, textAlign: 'center' }}>Nenhuma tarefa para hoje</div>}
-        {(data.tasks || []).map(task => (
-          <div key={task.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0f1117', borderRadius: 8, marginBottom: 8, borderLeft: `3px solid ${task.status === 'concluido' ? '#10b981' : '#f59e0b'}` }}>
-            <div>
-              <div style={{ fontSize: 14, color: task.status === 'concluido' ? '#666' : '#fff', textDecoration: task.status === 'concluido' ? 'line-through' : 'none' }}>{task.titulo}</div>
-              {task.status === 'concluido' && <div style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>✅ {task.concluido_por_nome} às {new Date(task.concluido_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>}
-            </div>
-            {task.status === 'pendente' && <button onClick={() => concluir(task.id)} style={{ padding: '6px 14px', background: '#10b981', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Concluir</button>}
+      <h3 style={{ color: '#fff', marginBottom: 16 }}>📌 Tarefas do Dia</h3>
+      {(!data.tasks || data.tasks.length === 0) && <div style={{ color: '#666', textAlign: 'center', padding: 20 }}>Nenhuma tarefa para hoje</div>}
+      {(data.tasks || []).map(task => (
+        <div key={task.id} style={{ background: '#1a1d2e', borderRadius: 12, padding: 16, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 500 }}>{task.titulo}</div>
+            {task.status === 'concluido' && (
+              <div style={{ fontSize: 11, color: '#10b981', marginTop: 4 }}>
+                ✅ {task.concluido_por_nome} às {new Date(task.concluido_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
           </div>
-        ))}
-        {user.role === 'admin' && (
-          <form onSubmit={adicionarTask} style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <input value={novaTask} onChange={e => setNovaTask(e.target.value)} placeholder="Adicionar tarefa manual..." style={{ flex: 1, padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13 }} />
-            <button type="submit" style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Adicionar</button>
-          </form>
-        )}
-      </div>
+          {task.status === 'pendente' && (
+            <button onClick={() => concluir(task.id)} style={{ padding: '6px 14px', background: '#10b981', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Concluir</button>
+          )}
+        </div>
+      ))}
+      {user.role === 'admin' && (
+        <form onSubmit={adicionarTask} style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <input value={novaTask} onChange={e => setNovaTask(e.target.value)} placeholder="Adicionar tarefa manual..." style={{ flex: 1, padding: '8px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13 }} />
+          <button type="submit" style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Adicionar</button>
+        </form>
+      )}
     </div>
   )
-}function Calendario({ user }) {
+}
+
+function Calendario({ user }) {
   const [events, setEvents] = useState([])
   const [form, setForm] = useState({ titulo: '', descricao: '', tipo: 'reuniao', data_inicio: '', data_fim: '', participantes: '' })
   const [mostrarForm, setMostrarForm] = useState(false)
   const [erro, setErro] = useState('')
+
   useEffect(() => { carregar() }, [])
+
   async function carregar() {
     try {
       const res = await fetch(`${API}/api/hub/events`, { headers: authHeaders() })
@@ -86,6 +99,7 @@ function DashboardDia({ user }) {
       setEvents(Array.isArray(json) ? json : [])
     } catch (e) { setEvents([]) }
   }
+
   async function criarEvento(e) {
     e.preventDefault()
     setErro('')
@@ -98,28 +112,33 @@ function DashboardDia({ user }) {
       carregar()
     } catch (e) { setErro('Erro de conexão') }
   }
+
   async function deletar(id) {
     await fetch(`${API}/api/hub/events/${id}`, { method: 'DELETE', headers: authHeaders() })
     carregar()
   }
+
   const tipoColors = { reuniao: '#6366f1', treinamento: '#f59e0b', visita: '#10b981' }
   const tipoLabels = { reuniao: '🤝 Reunião', treinamento: '📚 Treinamento', visita: '🔧 Visita Técnica' }
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h3 style={{ margin: 0, color: '#fff' }}>🗓️ Eventos</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ color: '#fff', margin: 0 }}>🗓️ Eventos</h3>
         {user.role === 'admin' && <button onClick={() => setMostrarForm(!mostrarForm)} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>+ Novo Evento</button>}
       </div>
-      {erro && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 12 }}>{erro}</div>}
+
+      {erro && <div style={{ background: '#ff444420', color: '#ff4444', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>{erro}</div>}
+
       {mostrarForm && (
-        <form onSubmit={criarEvento} style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <form onSubmit={criarEvento} style={{ background: '#1a1d2e', padding: 20, borderRadius: 12, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: '1/-1' }}><span style={lStyle}>Título</span><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Tipo</span><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} style={iStyle}><option value="reuniao">Reunião</option><option value="treinamento">Treinamento</option><option value="visita">Visita Técnica</option></select></div>
-            <div><span style={lStyle}>Participantes (vírgula)</span><input value={form.participantes} onChange={e => setForm({ ...form, participantes: e.target.value })} style={iStyle} placeholder="Daniel, Lucas..." /></div>
-            <div><span style={lStyle}>Início</span><input type="datetime-local" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} required style={iStyle} /></div>
-            <div><span style={lStyle}>Fim</span><input type="datetime-local" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} style={iStyle} /></div>
-            <div style={{ gridColumn: '1/-1' }}><span style={lStyle}>Descrição</span><textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...iStyle, height: 80, resize: 'vertical' }} /></div>
+            <div><label style={lStyle}>Título</label><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required style={iStyle} /></div>
+            <div><label style={lStyle}>Tipo</label><select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} style={iStyle}><option value="reuniao">Reunião</option><option value="treinamento">Treinamento</option><option value="visita">Visita Técnica</option></select></div>
+            <div style={{ gridColumn: 'span 2' }}><label style={lStyle}>Participantes (vírgula)</label><input value={form.participantes} onChange={e => setForm({ ...form, participantes: e.target.value })} style={iStyle} placeholder="Daniel, Lucas..." /></div>
+            <div><label style={lStyle}>Início</label><input type="datetime-local" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} required style={iStyle} /></div>
+            <div><label style={lStyle}>Fim</label><input type="datetime-local" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} style={iStyle} /></div>
+            <div style={{ gridColumn: 'span 2' }}><label style={lStyle}>Descrição</label><textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...iStyle, height: 80, resize: 'vertical' }} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button type="submit" style={{ padding: '8px 20px', background: '#6366f1', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer' }}>Salvar</button>
@@ -127,6 +146,7 @@ function DashboardDia({ user }) {
           </div>
         </form>
       )}
+
       <div style={{ display: 'grid', gap: 12 }}>
         {events.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhum evento cadastrado</div>}
         {events.map(ev => (
@@ -146,7 +166,9 @@ function DashboardDia({ user }) {
       </div>
     </div>
   )
-}function Historico() {
+}
+
+function Historico() {
   const [items, setItems] = useState([])
   useEffect(() => {
     fetch(`${API}/api/hub/historico`, { headers: authHeaders() })
@@ -154,10 +176,57 @@ function DashboardDia({ user }) {
       .then(d => setItems(Array.isArray(d) ? d : []))
       .catch(() => setItems([]))
   }, [])
+
   return (
     <div>
       <h3 style={{ color: '#fff', marginBottom: 16 }}>📋 Histórico de Tarefas Concluídas</h3>
       <div style={{ display: 'grid', gap: 8 }}>
         {items.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>Nenhuma tarefa concluída ainda</div>}
         {items.map(t => (
-          <div key={t.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: '
+          <div key={t.id} style={{ background: '#1a1d2e', borderRadius: 8, padding: 12, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+            <div style={{ color: '#fff' }}>{t.titulo}</div>
+            <div style={{ color: '#666' }}>✅ {t.concluido_por_nome} - {new Date(t.concluido_em).toLocaleDateString('pt-BR')}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default function Hub() {
+  const [user, setUser] = useState(null)
+  const [aba, setAba] = useState('dia')
+
+  useEffect(() => {
+    const u = localStorage.getItem('olt_user')
+    if (u) setUser(JSON.parse(u))
+  }, [])
+
+  if (!user) return null
+
+  return (
+    <div style={{ padding: 20, maxWidth: 1000, margin: '0 auto' }}>
+      <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', borderRadius: 16, padding: '24px 32px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+        <div>
+          <h2 style={{ margin: 0, color: '#fff', fontSize: 24 }}>Olá, {user.nome}! 👋</h2>
+          <p style={{ margin: '4px 0 0', color: '#e0e7ff', opacity: 0.9 }}>Bem-vindo ao Sentinel Hub</p>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: 12, color: '#fff', fontSize: 13, border: '1px solid rgba(255,255,255,0.2)' }}>
+          📍 {user.role === 'admin' ? 'Administrador' : 'Técnico'}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <button onClick={() => setAba('dia')} style={{ padding: '10px 20px', background: aba === 'dia' ? '#6366f1' : '#1a1d2e', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer', fontWeight: 600, transition: '0.2s' }}>☀️ Dia</button>
+        <button onClick={() => setAba('calendario')} style={{ padding: '10px 20px', background: aba === 'calendario' ? '#6366f1' : '#1a1d2e', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer', fontWeight: 600, transition: '0.2s' }}>🗓️ Calendário</button>
+        <button onClick={() => setAba('historico')} style={{ padding: '10px 20px', background: aba === 'historico' ? '#6366f1' : '#1a1d2e', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer', fontWeight: 600, transition: '0.2s' }}>📋 Histórico</button>
+      </div>
+
+      <div style={{ background: '#0f1117', borderRadius: 16, padding: 24, border: '1px solid #2a2d3e' }}>
+        {aba === 'dia' && <DashboardDia user={user} />}
+        {aba === 'calendario' && <Calendario user={user} />}
+        {aba === 'historico' && <Historico />}
+      </div>
+    </div>
+  )
+}
