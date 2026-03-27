@@ -42,7 +42,7 @@ router.get('/dashboard', async (req, res) => {
     );
 
     const stats = await pool.query(`
-      SELECT
+      SELECT 
         COUNT(*) FILTER (WHERE status='pendente') as pendentes,
         COUNT(*) FILTER (WHERE status='concluido') as concluidos
       FROM tasks WHERE data=$1
@@ -61,10 +61,12 @@ router.post('/tasks/:id/concluir', async (req, res) => {
       `UPDATE tasks SET status='concluido', concluido_por=$1, concluido_em=NOW() WHERE id=$2 RETURNING *`,
       [req.user.id, req.params.id]
     );
+
     await pool.query(
       `INSERT INTO activity_log (user_id, acao, detalhes) VALUES ($1,'concluiu_tarefa',$2)`,
       [req.user.id, result.rows[0]?.titulo]
     );
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -99,10 +101,11 @@ router.get('/events', async (req, res) => {
 router.post('/events', adminOnly, async (req, res) => {
   const { titulo, descricao, tipo, data_inicio, data_fim, participantes } = req.body;
   try {
+    // Stringify array of participants for JSONB column
     const result = await pool.query(
       `INSERT INTO events (titulo, descricao, tipo, data_inicio, data_fim, participantes, criado_por)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [titulo, descricao, tipo, data_inicio, data_fim, participantes, req.user.id]
+      [titulo, descricao, tipo, data_inicio, data_fim, JSON.stringify(participantes || []), req.user.id]
     );
     res.json(result.rows[0]);
   } catch (err) {
