@@ -2,11 +2,6 @@ import { useState, useEffect } from 'react'
 
 const API = ''
 
-function authHeaders() {
-  const token = localStorage.getItem('olt_token')
-  return { Authorization: `Bearer ${token}` }
-}
-
 function formatHoras(h) {
   if (!h) return 'N/A'
   const dias = Math.floor(h / 24)
@@ -50,26 +45,67 @@ Causa indefinida, necessário verificação em campo
 Gerado automaticamente pelo OLT Sentinel.`
 }
 
-function CardStat({ label, valor, cor, icon }) {
-  return (
-    <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, borderLeft: `4px solid ${cor}` }}>
-      <div style={{ fontSize: 11, color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>{icon} {label}</div>
-      <div style={{ fontSize: 32, fontWeight: 700, color: '#fff' }}>{valor}</div>
-    </div>
-  )
+function copiarTexto(texto) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(texto)
+  } else {
+    const textarea = document.createElement('textarea')
+    textarea.value = texto
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return Promise.resolve()
+    } catch (err) {
+      document.body.removeChild(textarea)
+      return Promise.reject(err)
+    }
+  }
 }
 
 function BotaoCopiar({ onu }) {
   const [copiado, setCopiado] = useState(false)
+  
   function copiar() {
-    navigator.clipboard.writeText(gerarTextoOS(onu))
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
+    copiarTexto(gerarTextoOS(onu))
+      .then(() => {
+        setCopiado(true)
+        setTimeout(() => setCopiado(false), 2000)
+      })
+      .catch(err => {
+        console.error('Erro ao copiar:', err)
+        alert('Erro ao copiar. Tente novamente.')
+      })
   }
+
   return (
-    <button onClick={copiar} style={{ padding: '4px 10px', background: copiado ? '#10b98120' : '#6366f120', border: `1px solid ${copiado ? '#10b981' : '#6366f1'}`, borderRadius: 6, color: copiado ? '#10b981' : '#6366f1', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>
+    <button 
+      onClick={copiar} 
+      style={{ 
+        padding: '4px 10px', 
+        background: copiado ? '#10b981' : '#6366f1', 
+        color: '#fff',
+        border: '1px solid ' + (copiado ? '#10b981' : '#6366f1'),
+        borderRadius: 6, 
+        fontSize: 11, 
+        whiteSpace: 'nowrap',
+        cursor: 'pointer'
+      }}
+    >
       {copiado ? '✅ Copiado!' : '📋 Copiar OS'}
     </button>
+  )
+}
+
+function CardStat({ label, valor, cor, icon }) {
+  return (
+    <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, borderLeft: `4px solid ${cor}` }}>
+      <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{icon} {valor}</div>
+      <div style={{ fontSize: 11, color: '#666', marginBottom: 6, textTransform: 'uppercase' }}>{label}</div>
+    </div>
   )
 }
 
@@ -78,6 +114,8 @@ export default function Dashboard() {
   const [offline, setOffline] = useState([])
   const [powerIssues, setPowerIssues] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filtroSev, setFiltroSev] = useState('todos')
+  const [ordenacao, setOrdenacao] = useState('tempo_desc')
 
   useEffect(() => { carregar() }, [])
 
@@ -85,9 +123,9 @@ export default function Dashboard() {
     setLoading(true)
     try {
       const [s, o, p] = await Promise.all([
-        fetch(`${API}/api/dashboard/stats`, { headers: authHeaders() }).then(r => r.json()),
-        fetch(`${API}/api/dashboard/offline`, { headers: authHeaders() }).then(r => r.json()),
-        fetch(`${API}/api/dashboard/power-issues`, { headers: authHeaders() }).then(r => r.json()),
+        fetch(`${API}/api/dashboard/stats`).then(r => r.json()),
+        fetch(`${API}/api/dashboard/offline`).then(r => r.json()),
+        fetch(`${API}/api/dashboard/power-issues`).then(r => r.json()),
       ])
       setStats(s)
       setOffline(Array.isArray(o) ? o : [])
@@ -100,79 +138,90 @@ export default function Dashboard() {
 
   if (loading) return <div style={{ padding: 40, color: '#666' }}>Carregando...</div>
 
+  let onusFiltradas = offline
+  if (filtroSev !== 'todos') {
+    onusFiltradas = onusFiltradas.filter(o => o.severity === filtroSev)
+  }
+
+  if (ordenacao === 'tempo_desc') {
+    onusFiltradas = [...onusFiltradas].sort((a, b) => (b.offline_hours || 0) - (a.offline_hours || 0))
+  } else if (ordenacao === 'tempo_asc') {
+    onusFiltradas = [...onusFiltradas].sort((a, b) => (a.offline_hours || 0) - (b.offline_hours || 0))
+  }
+
+  const contadores = {
+    critico: offline.filter(o => o.severity === 'critico').length,
+    alerta: offline.filter(o => o.severity === 'alerta').length,
+    atencao: offline.filter(o => o.severity === 'atencao').length,
+  }
+
   return (
     <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>📊 Dashboard</h1>
-          <p style={{ color: '#666', margin: '4px 0 0', fontSize: 13 }}>Monitoramento em tempo real das ONUs</p>
-        </div>
-        <button onClick={carregar} style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 13 }}>🔄 Atualizar</button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <CardStat label="Offline" valor={stats?.offline || 0} cor="#ef4444" icon="🔴" />
-        <CardStat label="Críticos" valor={stats?.criticos || 0} cor="#f59e0b" icon="🔥" />
-        <CardStat label="Prob. Potência" valor={stats?.problemasPotencia || 0} cor="#f97316" icon="📡" />
+        <CardStat label="Críticos" valor={stats?.criticos || 0} cor="#ef4444" icon="🚨" />
+        <CardStat label="Problemas Potência" valor={stats?.problemasPotencia || 0} cor="#f59e0b" icon="⚡" />
         <CardStat label="Online" valor={stats?.online || 0} cor="#10b981" icon="🟢" />
       </div>
 
-      <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: '0 0 16px' }}>🔴 ONUs Offline ({offline.length})</h2>
-        {offline.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 20 }}>Nenhuma ONU offline</div>}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                {['Cliente/ONU', 'OLT', 'Tempo Offline', 'Severidade', 'Potência', 'Ação'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#666', fontWeight: 500 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {offline.map(onu => (
-                <tr key={onu.id} style={{ borderBottom: '1px solid #2a2d3e1a' }}>
-                  <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 500 }}>{onu.name}</td>
-                  <td style={{ padding: '10px 12px', color: '#aaa' }}>{onu.olt_name}</td>
-                  <td style={{ padding: '10px 12px', color: '#f59e0b' }}>{formatHoras(onu.offline_hours)}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ color: severityColor[onu.severity] || '#aaa' }}>{severityLabel[onu.severity] || onu.severity}</span>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: '#aaa' }}>{onu.power_dbm ? `${onu.power_dbm} dBm` : 'N/A'}</td>
-                  <td style={{ padding: '10px 12px' }}><BotaoCopiar onu={onu} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 18, color: '#fff', margin: 0 }}>🔴 ONUs Offline ({onusFiltradas.length})</h2>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <select 
+              value={filtroSev} 
+              onChange={e => setFiltroSev(e.target.value)}
+              style={{ padding: '6px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13 }}
+            >
+              <option value="todos">Todos ({offline.length})</option>
+              <option value="critico">🔴 Críticos ({contadores.critico})</option>
+              <option value="alerta">🟡 Alertas ({contadores.alerta})</option>
+              <option value="atencao">🟠 Atenção ({contadores.atencao})</option>
+            </select>
+            <select 
+              value={ordenacao} 
+              onChange={e => setOrdenacao(e.target.value)}
+              style={{ padding: '6px 12px', background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: 6, color: '#fff', fontSize: 13 }}
+            >
+              <option value="tempo_desc">⬇️ Mais tempo offline</option>
+              <option value="tempo_asc">⬆️ Menos tempo offline</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: 12 }}>
+          {onusFiltradas.map(onu => (
+            <div key={onu.id} style={{ background: '#0f1117', borderLeft: `4px solid ${severityColor[onu.severity] || '#666'}`, borderRadius: 8, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{onu.name}</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>
+                  📍 {onu.olt_name} • ⏱ Offline há {formatHoras(onu.offline_hours)} • {severityLabel[onu.severity] || '🟢 Normal'}
+                </div>
+                {onu.power_dbm && (
+                  <div style={{ fontSize: 11, color: '#f59e0b' }}>⚡ Potência: {onu.power_dbm} dBm</div>
+                )}
+              </div>
+              <BotaoCopiar onu={onu} />
+            </div>
+          ))}
         </div>
       </div>
 
-      <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: '0 0 16px' }}>📡 Problemas de Potência ({powerIssues.length})</h2>
-        {powerIssues.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: 20 }}>Nenhum problema de potência</div>}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                {['Cliente/ONU', 'OLT', 'Potência (dBm)', 'Status', 'Ação'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#666', fontWeight: 500 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {powerIssues.map(onu => (
-                <tr key={onu.id} style={{ borderBottom: '1px solid #2a2d3e1a' }}>
-                  <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 500 }}>{onu.name}</td>
-                  <td style={{ padding: '10px 12px', color: '#aaa' }}>{onu.olt_name}</td>
-                  <td style={{ padding: '10px 12px', color: '#f97316' }}>{onu.power_dbm} dBm</td>
-                  <td style={{ padding: '10px 12px', color: '#f97316' }}>{onu.power_status}</td>
-                  <td style={{ padding: '10px 12px' }}><BotaoCopiar onu={onu} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {powerIssues.length > 0 && (
+        <div style={{ background: '#1a1d2e', borderRadius: 12, padding: 24, marginTop: 24 }}>
+          <h2 style={{ fontSize: 18, color: '#fff', marginBottom: 16 }}>⚡ Problemas de Potência ({powerIssues.length})</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {powerIssues.map(onu => (
+              <div key={onu.id} style={{ background: '#0f1117', borderLeft: '4px solid #f59e0b', borderRadius: 8, padding: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{onu.name}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>
+                  📍 {onu.olt_name} • ⚡ {onu.power_dbm} dBm • {onu.power_status}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
