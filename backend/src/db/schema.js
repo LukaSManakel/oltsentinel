@@ -71,6 +71,7 @@ async function initDB() {
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         senha_hash VARCHAR(255) NOT NULL,
+              ativo BOOLEAN DEFAULT TRUE,
         role VARCHAR(50) DEFAULT 'suporte',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -87,19 +88,21 @@ async function initDB() {
         concluido_por INTEGER REFERENCES users(id),
         concluido_em TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT NOW()
+              CONSTRAINT tasks_unique UNIQUE (titulo, data)
       );
     `);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
-        titulo VARCHAR(255) NOT NULL,
-        descricao TEXT,
-        data TIMESTAMPTZ,
-        participantes TEXT,
-        criado_por INTEGER REFERENCES users(id),
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
+      titulo VARCHAR(255) NOT NULL,
+      descricao TEXT,
+      tipo VARCHAR(50) DEFAULT 'reuniao',
+      data_inicio TIMESTAMPTZ,
+      data_fim TIMESTAMPTZ,
+      participantes JSONB,
+      criado_por INTEGER REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW()
     `);
 
     await client.query(`
@@ -107,7 +110,8 @@ async function initDB() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
         acao TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW()
+              detalhes TEXT,
+        created_at TIMESTAMPTZ DEFAULTNOW()
       );
     `);
 
