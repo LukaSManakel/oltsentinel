@@ -19,14 +19,11 @@ function gerarTextoOS(onu) {
   else if (onu.offline_hours > 24) analise = 'Cliente offline há mais de 24h, requer atenção técnica.'
 
   return `🔧 ABERTURA DE OS - ATENDIMENTO TÉCNICO
-
 📍 OLT: ${onu.olt_name}
 👤 Cliente/ONU: ${onu.name}
-
 🚨 Status: OFFLINE
 ⏱ Tempo offline: ${tempo}
 🔥 Severidade: ${severidadeEmoji}
-
 📡 Potência atual: ${potencia}
 
 🧠 Análise automática:
@@ -43,6 +40,35 @@ Causa indefinida, necessário verificação em campo
 
 📝 Observação:
 Gerado automaticamente pelo OLT Sentinel.`
+}
+
+function gerarTextoPotencia(onu) {
+  const dataHora = new Date().toLocaleString('pt-BR')
+  return `📡 PROBLEMA DE POTÊNCIA ÓPTICA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 OLT: ${onu.olt_name}
+👤 Cliente/ONU: ${onu.name}
+
+⚠️ Tipo: ${onu.power_status || 'SINAL FORA DO PADRÃO'}
+📊 Potência medida: ${onu.power_dbm} dBm
+✅ Faixa normal: -27 a -8 dBm
+
+⚠️ Possíveis causas:
+- Rompimento ou emenda ruim na fibra óptica
+- Conector sujo ou com micro-trinca
+- Atenuação excessiva no splitter
+- Distância além do limite da planta
+
+📌 Ações recomendadas:
+- Inspecionar e limpar conectores ópticos
+- Medir com OTDR para localizar ponto de falha
+- Verificar emendas e caixas de atendimento
+- Substituir trecho de fibra se necessário
+
+📝 Observação:
+Gerado automaticamente pelo sistema OLT Sentinel.
+Data/Hora: ${dataHora}`
 }
 
 function copiarTexto(texto) {
@@ -96,6 +122,40 @@ function BotaoCopiar({ onu }) {
       }}
     >
       {copiado ? '✅ Copiado!' : '📋 Copiar OS'}
+    </button>
+  )
+}
+
+function BotaoCopiarPotencia({ onu }) {
+  const [copiado, setCopiado] = useState(false)
+  
+  function copiar() {
+    copiarTexto(gerarTextoPotencia(onu))
+      .then(() => {
+        setCopiado(true)
+        setTimeout(() => setCopiado(false), 2000)
+      })
+      .catch(err => {
+        console.error('Erro ao copiar:', err)
+        alert('Erro ao copiar. Tente novamente.')
+      })
+  }
+
+  return (
+    <button 
+      onClick={copiar} 
+      style={{ 
+        padding: '4px 10px', 
+        background: copiado ? '#10b981' : '#f59e0b', 
+        color: '#fff',
+        border: '1px solid ' + (copiado ? '#10b981' : '#f59e0b'),
+        borderRadius: 6, 
+        fontSize: 11, 
+        whiteSpace: 'nowrap',
+        cursor: 'pointer'
+      }}
+    >
+      {copiado ? '✅ Copiado!' : '📋 Copiar Relatório'}
     </button>
   )
 }
@@ -212,11 +272,14 @@ export default function Dashboard() {
           <h2 style={{ fontSize: 18, color: '#fff', marginBottom: 16 }}>⚡ Problemas de Potência ({powerIssues.length})</h2>
           <div style={{ display: 'grid', gap: 12 }}>
             {powerIssues.map(onu => (
-              <div key={onu.id} style={{ background: '#0f1117', borderLeft: '4px solid #f59e0b', borderRadius: 8, padding: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{onu.name}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>
-                  📍 {onu.olt_name} • ⚡ {onu.power_dbm} dBm • {onu.power_status}
+              <div key={onu.id} style={{ background: '#0f1117', borderLeft: '4px solid #f59e0b', borderRadius: 8, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{onu.name}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    📍 {onu.olt_name} • ⚡ {onu.power_dbm} dBm • {onu.power_status}
+                  </div>
                 </div>
+                <BotaoCopiarPotencia onu={onu} />
               </div>
             ))}
           </div>
